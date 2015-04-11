@@ -2,14 +2,7 @@
 // Created by Oz Tamir on 4/10/15.
 //
 
-#include "linked_string.c"
-#include "hash_table.h"
-
-static const int num_demos = 2;
-static const char* available[num_demos] = {
-        "Linked list",
-        "Hash Tables"
-};
+#include "main.h"
 
 void usage(){
     /*
@@ -34,6 +27,9 @@ int main(int argc, char** argv){
     // If the user is looking for the hash table demo, run it
     else if (strcmp(argv[1], "hash_table.c") == 0 || strcmp(argv[1], "hash_table.h") == 0)
         main_hash_table();
+    // If the user is looking for the hiding demo
+    else if (strcmp(argv[1], "hider.c") == 0 || strcmp(argv[1], "hider.h") == 0)
+        main_hider(argc, argv);
     // Else, print a usage message
     else
         usage();

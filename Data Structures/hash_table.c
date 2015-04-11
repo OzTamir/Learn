@@ -79,7 +79,7 @@ unsigned long hash(char *key) {
     int ch;
 
     // The hash function
-    while (ch = *key++)
+    while ((ch = *key++))
         // This function was found by dan bernstein
         hash = (hash * MAGIC_HASH_CONST) ^ ch;
 

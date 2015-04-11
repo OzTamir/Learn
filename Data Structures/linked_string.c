@@ -9,11 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-// Define a boolean type
-typedef char bool;
-#define true 1
-#define false 0
+#include "../utils.h"
 
 // Node in the linked list
 typedef struct node{
