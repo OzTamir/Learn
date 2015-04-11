@@ -1,5 +1,9 @@
-//
+// hider.c
+// ------------
+// Hide data inside files.
+// ------------
 // Created by Oz Tamir on 4/11/15.
+// ------------
 //
 
 #include <stdio.h>

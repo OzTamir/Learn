@@ -1,6 +1,11 @@
-//
+// hider.c
+// ------------
+// Hide data inside files.
+// ------------
 // Created by Oz Tamir on 4/11/15.
+// ------------
 //
+
 #include "../utils.h"
 
 #ifndef LEARN_HIDER_H
