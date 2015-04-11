@@ -8,8 +8,8 @@
 
 /*
  * TODO:
- *  - Add collision handling
  *  - Add dynamic resizing
+ *  - Improve the hash function
  */
 
 #ifndef LEARN_HASH_TABLE_H
@@ -23,9 +23,17 @@ typedef union{
     char* s;
 } data_t;
 
+// Key-Value pair
+typedef struct entry_s{
+    char* key;
+    data_t* value;
+    // We use separate chaining for collision handling
+    struct entry_s* next;
+} entry_t;
+
 // A HashTable type
 typedef struct{
-    data_t* arr;
+    entry_t** _table;
     int size;
 } HashTable;
 
@@ -34,10 +42,13 @@ HashTable* create_table(int size);
 // The hashing function
 int hash(char* key);
 
+// Create an entry for a key-value pair
+entry_t* create_entry(char* key, data_t* value);
+
 // Set a value for a given key
-void set(HashTable *table, char* key, data_t value);
+void set(HashTable *table, char* key, data_t* value);
 // Retrive the value of a key
-data_t get(HashTable *table, char *key);
+data_t* get(HashTable *table, char *key);
 
 int main_hash_table();
 
