@@ -6,12 +6,6 @@
 // ------------
 //
 
-/*
- * TODO:
- *  - Add dynamic resizing
- *  - Improve the hash function
- */
-
 #ifndef LEARN_HASH_TABLE_H
 #define LEARN_HASH_TABLE_H
 
@@ -23,7 +17,7 @@ typedef union{
     char* s;
 } data_t;
 
-// Key-Value pair
+// Entry in the table
 typedef struct entry_s{
     char* key;
     data_t* value;
@@ -34,21 +28,26 @@ typedef struct entry_s{
 // A HashTable type
 typedef struct{
     entry_t** _table;
+    int _size;
     int size;
 } HashTable;
 
 // Create a new hash table
 HashTable* create_table(int size);
+// Expend a table to allow for more entries
+void expend_table(HashTable* table);
 // The hashing function
-int hash(char* key);
+unsigned long hash(char* key);
 
 // Create an entry for a key-value pair
 entry_t* create_entry(char* key, data_t* value);
 
 // Set a value for a given key
 void set(HashTable *table, char* key, data_t* value);
-// Retrive the value of a key
+// Retrieve the value of a key
 data_t* get(HashTable *table, char *key);
+// Deallocate a table
+void delete_table(HashTable* table);
 
 int main_hash_table();
 

@@ -11,6 +11,10 @@
 #include <stdio.h>
 #include "hash_table.h"
 
+#define RESIZE_FACTOR 2
+#define HASH_SEED 5381
+#define MAGIC_HASH_CONST 33
+
 HashTable* create_table(int size){
     /*
      * Create a new hash table with the requested size.
@@ -35,31 +39,51 @@ HashTable* create_table(int size){
 
     // Set the table size
     t->size = size;
+    t->_size = 0;
 
     return t;
 
 }
 
-int hash(char *key) {
+void expend_table(HashTable *table) {
     /*
-     * A Simple hash function
+     * Expend a table by swapping it with a bigger one
+     * Not the most efficient solution but since this is only for learning purposes...
      */
-    int res = 1;
-    for (int i = 0; i < strlen(key); i++){
-        // Since a zero won't matter or it will ruin the counting, we ignore any zeros
-        if ((int)key[i] != 0) {
-            // Simply, if it's even multiply by it, else add it
-            if (res % 2)
-                res *= key[i];
-            else
-                res += key[i];
+    HashTable *new_table = create_table(table->size * RESIZE_FACTOR);
+    HashTable swap;
+    entry_t* tmp;
+
+    // Iterate over the table and insert its items to the new one
+    for (int i = 0; i < table->size; i++){
+        for (tmp = table->_table[i]; tmp != NULL; tmp = tmp->next){
+            // Insert the entry to the new table
+            set(new_table, tmp->key, tmp->value);
         }
     }
 
-    // Since we are only adding and multiplying, we might get an int overflow - so we take care of it
-    if (res < 0)
-        res *= -1;
-    return res;
+    // Swap the underlying arrays
+    swap = *table;
+    *table = *new_table;
+    *new_table = swap;
+
+    // Destroy the previous pointer to avoid memory leaks
+    delete_table(new_table);
+}
+
+unsigned long hash(char *key) {
+    /*
+     * A Simple hash function (based on djb2)
+     */
+    unsigned long hash = HASH_SEED;
+    int ch;
+
+    // The hash function
+    while (ch = *key++)
+        // This function was found by dan bernstein
+        hash = (hash * MAGIC_HASH_CONST) ^ ch;
+
+    return hash;
 }
 
 entry_t* create_entry(char *key, data_t *value) {
@@ -84,6 +108,10 @@ void set(HashTable *table, char* key, data_t* value) {
     /*
      * Set a value for a key in the table
      */
+    // If we could use more space, try to expend the table
+    if (++table->_size >= table->size){
+        expend_table(table);
+    }
     entry_t* next = NULL;
     entry_t* last = NULL;
 
@@ -148,9 +176,35 @@ data_t* get(HashTable *table, char *key) {
     return entry->value;
 }
 
+void delete_table(HashTable *table) {
+    /*
+     * Deallocate a table
+     */
+    entry_t *last, *next;
+
+    // Iterate over the table and free its entries
+    for (int i = 0; i < table->size; i++){
+        for (last = table->_table[i]; last != NULL; last = next){
+            // Set the next pointer to delete
+            next = last->next;
+
+            // Free everything!
+            free(last->key);
+            free(last->value);
+            free(last);
+        }
+    }
+
+    // Free the pointer to the table
+    free(table->_table);
+
+    // Free the table itself
+    free(table);
+}
+
 int main_hash_table() {
     // Create an HashTable with a size of 10
-    HashTable* table = create_table(10);
+    HashTable* table = create_table(64);
     data_t* data, *res;
 
     // Set "Hello" = "World!" in the table
@@ -172,4 +226,3 @@ int main_hash_table() {
     printf("Value for \"Giddy\" = %s\n", res->s);
     return 0;
 }
-
