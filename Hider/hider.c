@@ -19,31 +19,46 @@ void xor_data(char *buff, int key) {
         buff[i] = buff[i] ^ key;
 }
 
-char* create_secret(char* secret_file){
+secret_t* create_secret(char* secret_file){
     /*
      * Create a string that hides the file's content
      */
     FILE* secret_fp;
-    char secret[SECRET_SIZE];
+    char* buff;
 
     // Open the file
-    secret_fp = fopen(secret_file, "r");
+    secret_fp = fopen(secret_file, "rb");
     if (secret_fp == NULL) {
         fprintf(stderr, "Can't open secret file %s!\n", secret_file);
         exit(1);
     }
 
+    // Determinate the size of the array required to store the data
+    fseek(secret_fp, 0, SEEK_END);
+    long size = ftell(secret_fp);
+    rewind(secret_fp);
+    // And alllocate that size
+    if ((buff = malloc(size)) == NULL){
+        fprintf(stderr, "Can't allocate memory for file.");
+        exit(1);
+    }
+
     // Read its content
-    fgets(secret, SECRET_SIZE, secret_fp);
+    fread(buff, size, 1, secret_fp);
     fclose(secret_fp);
 
     // "Encrypt" (as if) the data
-    xor_data(secret, DEFAULT_KEY);
+    xor_data(buff, DEFAULT_KEY);
 
+
+    // Create the secret_t
+    secret_t* secret = malloc(sizeof(secret_t));
+    secret->size = size;
+    secret->buff = buff;
     return secret;
 }
 
-char* read_secret(char* filename){
+secret_t* read_secret(char* filename){
     /*
      * Parse a secret message out of a file
      */
@@ -70,47 +85,55 @@ char* read_secret(char* filename){
     char* encrypted = malloc(size * sizeof(char));
 
     // Get the data and decrypt it
-    fgets(encrypted, size + 1, fp);
+    fread(encrypted, size + 1, 1, fp);
     xor_data(encrypted, DEFAULT_KEY);
 
     // Close the file
     fclose(fp);
 
-    return encrypted;
+    // Create a secret_t struct and return it
+    secret_t* secret = malloc(sizeof(secret_t));
+    secret->size = size;
+    secret->buff = encrypted;
+
+    return secret;
 }
 
-void write_data(FILE* out_fp, char* data, bool checksum){
+void write_data(FILE* out_fp, secret_t* data, bool checksum){
     /*
      * Write data to file
      */
     // Write it to the file
-    fputs(data, out_fp);
+    fwrite(data->buff, 1, data->size, out_fp);
     // If requested, add up to 10 chars declaring the length of the data
     if (checksum)
-        fprintf(out_fp, "%010d", (int)strlen(data));
+        fprintf(out_fp, "%032d", data->size);
 }
 
-void hide(char* img_file, char* secret_file) {
+void hide(char* output_file, char* secret_file) {
     /*
      * Hide a data from secret_file in img_file
      */
-    FILE *img_fp;
+    FILE *out_fp;
 
     // Open the file
-    img_fp = fopen(img_file, "ab");
-    if (img_fp == NULL) {
-        fprintf(stderr, "Can't open image file %s!\n", img_file);
+    out_fp = fopen(output_file, "ab");
+    if (out_fp == NULL) {
+        fprintf(stderr, "Can't open image file %s!\n", output_file);
         exit(1);
     }
 
     // Get the secret as a string
-    char* secret = create_secret(secret_file);
+    secret_t* secret = create_secret(secret_file);
 
     // Write the data to the file
-    write_data(img_fp, secret, true);
+    write_data(out_fp, secret, true);
+
+    // Free the memory to avoid leaks
+    free(secret);
 
     // Close the file
-    fclose(img_fp);
+    fclose(out_fp);
 
 }
 
@@ -128,7 +151,7 @@ void reveal(char* input_file, char* output_file) {
     }
 
     // Read the secret data
-    char* secret = read_secret(input_file);
+    secret_t* secret = read_secret(input_file);
     // Write the data retrieved to the output file
     write_data(out_fp, secret, false);
 
