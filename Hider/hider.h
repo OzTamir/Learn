@@ -27,6 +27,6 @@ int main_hider(int argc, char** argv);
 void write_data(FILE* out_fp, secret_t* data, bool checksum);
 secret_t* read_secret(char* filename);
 secret_t* create_secret(char* secret_file);
-void xor_data(char *buff, int key);
+void xor_data(char *buff);
 
 #endif //LEARN_HIDER_H

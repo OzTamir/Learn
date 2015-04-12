@@ -11,7 +11,26 @@
 #include <stdlib.h>
 #include "hider.h"
 
-void xor_data(char *buff, int key) {
+static int key = DEFAULT_KEY;
+
+#define HASH_SEED 5381
+#define MAGIC_HASH_CONST 33
+unsigned long hash_key(char *key) {
+    /*
+     * A Simple hash function (based on djb2)
+     */
+    unsigned long hash = HASH_SEED;
+    int ch;
+
+    // The hash function
+    while ((ch = *key++))
+        // This function was found by dan bernstein
+        hash = (hash * MAGIC_HASH_CONST) ^ ch;
+
+    return hash;
+}
+
+void xor_data(char *buff) {
     /*
      * Encrypt a string
      */
@@ -48,7 +67,7 @@ secret_t* create_secret(char* secret_file){
     fclose(secret_fp);
 
     // "Encrypt" (as if) the data
-    xor_data(buff, DEFAULT_KEY);
+    xor_data(buff);
 
 
     // Create the secret_t
@@ -69,24 +88,24 @@ secret_t* read_secret(char* filename){
     }
 
     // Change the pointer to the last 10 chars
-    fseek(fp, -9, SEEK_END);
+    fseek(fp, -31, SEEK_END);
 
     // Get the last 10 chars
-    char length[10];
-    fgets(length, 10, fp);
+    char length[32];
+    fgets(length, 32, fp);
 
     // Figure out the number of chars to read
     int size = atoi(length);
 
     // Change the pointer to the beginning of the encrypted data
-    fseek(fp, -(size + 10), SEEK_END);
+    fseek(fp, -(size + 32), SEEK_END);
 
     // Allocate enough space for the data
     char* encrypted = malloc(size * sizeof(char));
 
     // Get the data and decrypt it
     fread(encrypted, size + 1, 1, fp);
-    xor_data(encrypted, DEFAULT_KEY);
+    xor_data(encrypted);
 
     // Close the file
     fclose(fp);
@@ -179,6 +198,7 @@ void usage_hider(){
 int main_hider(int argc, char** argv){
     // In case we want to encrypt
     if (argc == (4 + LEARN_ARGC_FACTOR)){
+        key = hash_key(argv[1 + LEARN_ARGC_FACTOR]);
         char* f_out = argv[2 + LEARN_ARGC_FACTOR];
         char* f_in = argv[3 + LEARN_ARGC_FACTOR];
         hide(f_out, f_in);
@@ -186,6 +206,7 @@ int main_hider(int argc, char** argv){
 
     // In case we want to decrypt
     else if ((argc == 5 + LEARN_ARGC_FACTOR) && (strcmp(argv[4 + LEARN_ARGC_FACTOR], "-d") == 0)){
+        key = hash_key(argv[1 + LEARN_ARGC_FACTOR]);
         char* f_in = argv[2 + LEARN_ARGC_FACTOR];
         char* f_out = argv[3 + LEARN_ARGC_FACTOR];
         reveal(f_in, f_out);
