@@ -4,6 +4,7 @@
 #include "Data Structures/linked_string.c"
 #include "Data Structures/hash_table.h"
 #include "Hider/hider.h"
+#include "MacroUtils/macros.h"
 #include "utils.h"
 
 #ifndef LEARN_MAIN_H
